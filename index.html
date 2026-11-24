@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TrashMate - Smart Waste Sorting System</title>
+<style>
+  :root{
+    --bg:#f1f8f4; --card:#ffffff; --text:#1d2b24; --muted:#5f7368; --line:#dbe7e0;
+    --primary:#1f9d63; --primary-d:#157a4a;
+    --organik:#2e9e4f; --anorganik:#2b7fd0; --b3:#d64545; --residu:#7a7f87;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f1a15; --card:#17261f; --text:#e6f2ec; --muted:#9bb2a6; --line:#26392f; }
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+  .wrap{max-width:640px;margin:0 auto;padding:16px 16px 40px}
+  header{text-align:center;padding:20px 8px 8px}
+  header h1{margin:0;font-size:1.8rem;letter-spacing:1px;color:var(--primary)}
+  header p{margin:4px 0 0;color:var(--muted);font-size:.9rem}
+  .tabs{display:flex;gap:8px;margin:16px 0}
+  .tab{flex:1;padding:12px 8px;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:12px;font-size:.95rem;font-weight:600;cursor:pointer}
+  .tab.active{background:var(--primary);border-color:var(--primary);color:#fff}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+  label{display:block;font-weight:600;margin-bottom:8px;font-size:.95rem}
+  .row{display:flex;gap:8px}
+  input[type=text]{flex:1;min-width:0;padding:12px 14px;font-size:1rem;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--text)}
+  input[type=text]:focus{outline:2px solid var(--primary);border-color:transparent}
+  button.btn{padding:12px 18px;border:0;border-radius:12px;background:var(--primary);color:#fff;font-weight:700;font-size:1rem;cursor:pointer}
+  button.btn:active{background:var(--primary-d)}
+  button.btn.alt{background:var(--card);color:var(--text);border:1px solid var(--line)}
+  .hint{font-size:.82rem;color:var(--muted);margin-top:8px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .chip{padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:.82rem;cursor:pointer}
+  .badge{display:inline-block;padding:4px 10px;border-radius:999px;color:#fff;font-size:.78rem;font-weight:700}
+  .k-organik{background:var(--organik)} .k-anorganik{background:var(--anorganik)}
+  .k-b3{background:var(--b3)} .k-residu{background:var(--residu)}
+  .result h2{margin:8px 0 4px;font-size:1.25rem;text-transform:capitalize}
+  .result .lbl{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:10px}
+  .box{margin-top:12px;padding:12px;border-radius:12px;background:var(--bg);border:1px dashed var(--line);font-size:.92rem}
+  .box ul{margin:6px 0 0;padding-left:20px}
+  .warn{border-color:var(--b3)}
+  .list-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .list-item:last-child{border-bottom:0}
+  .list-item .nm{text-transform:capitalize;font-weight:500}
+  .list-item .no{color:var(--muted);font-size:.8rem;margin-right:6px}
+  .filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .hidden{display:none}
+  footer{text-align:center;color:var(--muted);font-size:.8rem;margin-top:24px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>♻️ TRASHMATE</h1>
+    <p>Smart Waste Sorting System</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="cari">🔍 Cari</button>
+    <button class="tab" data-tab="db">📋 Database (<span id="jml">0</span>)</button>
+    <button class="tab" data-tab="info">ℹ️ Info</button>
+  </div>
+
+  <!-- MENU 1: CARI -->
+  <section id="cari">
+    <div class="card">
+      <label for="q">Masukkan nama sampah</label>
+      <div class="row">
+        <input type="text" id="q" placeholder="cth: botol plastik, baterai…" autocomplete="off" autocapitalize="none">
+        <button class="btn" id="btnCari">Cari</button>
+      </div>
+      <div class="chips" id="contoh"></div>
+      <div class="hint">Pencarian tidak membedakan huruf besar/kecil dan boleh sebagian kata.</div>
+    </div>
+    <div id="hasil"></div>
+  </section>
+
+  <!-- MENU 2: DATABASE -->
+  <section id="db" class="hidden">
+    <div class="card">
+      <div class="filters" id="filters"></div>
+      <div id="daftar"></div>
+    </div>
+  </section>
+
+  <!-- MENU 3: INFO -->
+  <section id="info" class="hidden">
+    <div class="card">
+      <p><b>TrashMate</b> membantu memilah sampah ke dalam 4 kategori:</p>
+      <p><span class="badge k-organik">Organik</span> sisa makhluk hidup yang mudah terurai.</p>
+      <p><span class="badge k-anorganik">Anorganik</span> bahan yang bisa didaur ulang.</p>
+      <p><span class="badge k-b3">B3</span> Bahan Berbahaya &amp; Beracun.</p>
+      <p><span class="badge k-residu">Residu</span> sampah yang sulit/tidak bisa didaur ulang.</p>
+      <p class="hint">Terima kasih telah menggunakan TrashMate! Mari jaga lingkungan bersama.</p>
+    </div>
+  </section>
+
+  <footer>TrashMate • Proyek Akhir</footer>
+</div>
+
+<script>
+/* ===== DATABASE (disalin dari file C++) ===== */
+const KAT = {
+  organik:   "Sampah Organik",
+  anorganik: "Sampah Anorganik",
+  b3:        "Sampah B3 (Bahan Berbahaya & Beracun)",
+  residu:    "Sampah Residu"
+};
+const database = [
+  // ORGANIK
+  ["sisa makanan","organik","Olah menjadi kompos atau pakan maggot."],
+  ["kulit buah","organik","Olah menjadi kompos atau eco-enzyme."],
+  ["daun kering","organik","Kumpulkan untuk dijadikan pupuk kompos."],
+  ["sayuran","organik","Olah menjadi pupuk organik cair atau kompos."],
+  ["tulang ayam","organik","Dapat diolah menjadi kompos dengan pencacahan khusus atau pakan hewan."],
+  ["kulit telur","organik","Haluskan untuk dijadikan pupuk tanaman sumber kalsium."],
+  ["ampas teh","organik","Campurkan langsung ke media tanam atau komposer."],
+  ["ampas kopi","organik","Sangat baik untuk kompos dan media tanam tanaman hias."],
+  ["bonggol sayur","organik","Olah menjadi kompos bersama sisa sayuran lainnya."],
+  // ANORGANIK
+  ["botol plastik","anorganik","Remukkan botol, pisahkan tutupnya, lalu setor ke bank sampah/daur ulang."],
+  ["kaleng","anorganik","Bersihkan sisa isi, pipihkan, dan salurkan ke pengepul logam/daur ulang."],
+  ["kertas","anorganik","Pastikan tidak basah/berminyak, lalu kumpulkan untuk didaur ulang."],
+  ["kaca","anorganik","Bungkus rapat agar tidak melukai petugas, lalu serahkan ke pusat daur ulang."],
+  ["kardus","anorganik","Lipat rapi dan simpan di tempat kering untuk didaur ulang."],
+  ["ember plastik","anorganik","Salurkan ke bank sampah jika masih utuh atau daur ulang plastik."],
+  ["sikat gigi","anorganik","Bersihkan sebelum disetor atau didaur ulang."],
+  ["kabel listrik","anorganik","Pisahkan tembaga di dalamnya untuk disetor ke pengepul rongsokan."],
+  // B3
+  ["baterai bekas","b3","Jangan dibuang sembarangan! Serahkan ke dropbox limbah elektronik/B3."],
+  ["lampu bekas","b3","Bungkus dengan kardus agar tidak pecah dan serahkan ke fasilitas limbah B3."],
+  ["kaleng cat","b3","Simpan tertutup rapat dan serahkan ke pengelola limbah B3."],
+  ["obat kadaluarsa","b3","Hancurkan kemasan dan serahkan ke apotek atau fasilitas kesehatan."],
+  ["termometer merkuri","b3","Jangan dipecahkan! Serahkan khusus ke pengelola limbah medis/B3."],
+  // RESIDU
+  ["popok bayi","residu","Bersihkan kotorannya ke kloset, gulung rapat, lalu buang ke tempat sampah residu."],
+  ["popok dewasa","residu","Gulung rapat dan bungkus plastik sebelum dibuang ke tempat sampah residu."],
+  ["pembalut wanita","residu","Bungkus dengan kertas atau plastik rapat, lalu buang ke tempat sampah residu."],
+  ["tisu wajah","residu","Buang ke tempat sampah residu karena serat kertas sudah kotor dan tidak bisa didaur ulang."],
+  ["tisu basah","residu","Buang ke tempat sampah residu."],
+  ["masker medis","residu","Gunting tali pengikatnya agar tidak menjerat hewan, bungkus rapat, lalu buang ke residu."],
+  ["puntung rokok","residu","Pastikan api sudah mati total, lalu buang ke tempat sampah residu."],
+  ["kemasan sachet","residu","Buang ke tempat sampah residu karena berlapis plastik dan aluminium foil."],
+  ["styrofoam","residu","Buang ke tempat sampah residu karena sangat sulit diurai dan didaur ulang."],
+  ["kertas nasi","residu","Buang ke tempat sampah residu karena mengandung lapisan plastik/minyak."],
+  ["sedotan plastik","residu","Buang ke tempat sampah residu jika tipis, kotor, atau rusak."],
+  ["pecahan keramik","residu","Bungkus tebal agar aman bagi petugas, lalu buang ke tempat sampah residu."],
+  ["lakban","residu","Buang ke tempat sampah residu."],
+  ["struk belanja","residu","Kertas termal struk tidak bisa didaur ulang karena bahan kimia, buang ke residu."],
+  ["tipe-x","residu","Buang ke tempat sampah residu."],
+  ["pulpen rusak","residu","Buang ke tempat sampah residu."],
+  ["balon karet","residu","Buang ke tempat sampah residu."]
+].map(([nama,kat,pengelolaan]) => ({nama, kat, kategori: KAT[kat], pengelolaan}));
+
+const JUMLAH_DATA = database.length;
+
+/* ===== LOGIKA (sama seperti C++) ===== */
+function cariSampah(input){
+  const kunci = input.toLowerCase();
+  for (let i = 0; i < JUMLAH_DATA; i++){
+    if (database[i].nama.toLowerCase().includes(kunci)) return i;
+  }
+  return -1;
+}
+
+/* ===== UI ===== */
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+$('jml').textContent = JUMLAH_DATA;
+
+// Tab
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  ['cari','db','info'].forEach(id => $(id).classList.toggle('hidden', id !== t.dataset.tab));
+}));
+
+// Contoh cepat
+['sisa makanan','botol plastik','baterai bekas','masker medis'].forEach(c => {
+  const b = document.createElement('button');
+  b.className = 'chip'; b.textContent = c;
+  b.onclick = () => { $('q').value = c; cari(); };
+  $('contoh').appendChild(b);
+});
+
+function cari(){
+  const input = $('q').value.trim();
+  const out = $('hasil');
+  if (!input){
+    out.innerHTML = '<div class="card box warn">Nama sampah tidak boleh kosong!</div>';
+    return;
+  }
+  const idx = cariSampah(input);
+  if (idx !== -1){
+    const d = database[idx];
+    let html = `
+      <div class="card result">
+        <span class="badge k-${d.kat}">${esc(d.kategori)}</span>
+        <h2>${esc(d.nama)}</h2>
+        <div class="lbl">Pengelolaan</div>
+        <div>${esc(d.pengelolaan)}</div>`;
+    if (d.kat === 'residu'){
+      html += `
+        <div class="box" id="boxResidu">
+          Apakah di lokasi Anda tersedia tempat sampah khusus Residu?
+          <div class="row" style="margin-top:10px">
+            <button class="btn" id="yaR">Ya</button>
+            <button class="btn alt" id="tidakR">Tidak</button>
+          </div>
+        </div>`;
+    }
+    html += '</div>';
+    out.innerHTML = html;
+    if (d.kat === 'residu'){
+      $('yaR').onclick = () => $('boxResidu').innerHTML = '✅ Bagus! Buang ke tempat sampah <b>Residu</b>.';
+      $('tidakR').onclick = () => $('boxResidu').innerHTML =
+        '➡️ <b>ALTERNATIF:</b> Karena tidak tersedia tempat sampah residu, bungkus rapat sampah tersebut dan masukkan ke tempat <b>Sampah Anorganik</b> sementara.';
+    }
+  } else {
+    out.innerHTML = `
+      <div class="card result">
+        <div class="box warn" style="margin-top:0">
+          ⚠️ Maaf, '<b>${esc(input)}</b>' belum terdaftar secara spesifik di database.
+          <div style="margin-top:8px"><b>SARAN ALTERNATIF:</b></div>
+          <ul>
+            <li>Jika berupa sisa makanan/daun → <b>Sampah Organik</b>.</li>
+            <li>Jika berupa barang kering/plastik/kaleng → <b>Sampah Anorganik</b>.</li>
+            <li>Jika berupa limbah berbahaya → <b>Sampah B3</b>.</li>
+            <li>Jika berupa sampah kotor/sekali pakai dan tidak ada tempat residu → <b>Sampah Anorganik</b> sebagai alternatif.</li>
+          </ul>
+        </div>
+      </div>`;
+  }
+}
+$('btnCari').onclick = cari;
+$('q').addEventListener('keydown', e => { if (e.key === 'Enter') cari(); });
+
+// Database list + filter
+let filter = 'semua';
+function renderFilters(){
+  const opsi = [['semua','Semua'],['organik','Organik'],['anorganik','Anorganik'],['b3','B3'],['residu','Residu']];
+  $('filters').innerHTML = '';
+  opsi.forEach(([k,l]) => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = l;
+    if (k === filter){ b.style.background = 'var(--primary)'; b.style.color = '#fff'; }
+    b.onclick = () => { filter = k; renderFilters(); renderList(); };
+    $('filters').appendChild(b);
+  });
+}
+function renderList(){
+  let html = '';
+  database.forEach((d,i) => {
+    if (filter !== 'semua' && d.kat !== filter) return;
+    html += `<div class="list-item">
+      <div><span class="no">${i+1}.</span><span class="nm">${esc(d.nama)}</span></div>
+      <span class="badge k-${d.kat}">${esc(d.kategori.split(' (')[0].replace('Sampah ',''))}</span>
+    </div>`;
+  });
+  $('daftar').innerHTML = html;
+}
+renderFilters(); renderList();
+</script>
+</body>
+</html>
